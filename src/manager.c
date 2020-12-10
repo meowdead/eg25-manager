@@ -22,10 +22,17 @@ static gboolean quit_timeout_cb(struct EG25Manager *manager)
     g_message("Modem down, quitting...");
     g_main_loop_quit(manager->loop);
 
-    at_destroy(manager);
-    gpio_destroy(manager);
-
     return FALSE;
+}
+
+static gboolean gpio_poll_cb(struct EG25Manager *manager)
+{
+    if (gpio_check_poweroff(manager)) {
+        quit_timeout_cb(manager);
+        return FALSE;
+    }
+
+    return TRUE;
 }
 
 static gboolean quit_app(struct EG25Manager *manager)
@@ -36,10 +43,7 @@ static gboolean quit_app(struct EG25Manager *manager)
         g_message("Powering down the modem...");
         gpio_sequence_shutdown(manager);
         manager->modem_state = EG25_STATE_FINISHING;
-        /*
-         * TODO: add a polling function to check STATUS and RI pins state
-         * (that way we could reduce the poweroff delay)
-         */
+        g_timeout_add(500, G_SOURCE_FUNC(gpio_poll_cb), manager);
         g_timeout_add_seconds(30, G_SOURCE_FUNC(quit_timeout_cb), manager);
     }
 
@@ -140,7 +144,7 @@ int main(int argc, char *argv[])
         return 1;
     }
     read(fd, compatible, sizeof(compatible));
-    if (strstr(compatible, "pine64,pinephone-1.1"))
+    if (!strstr(compatible, "pine64,pinephone-1.2"))
         manager.braveheart = TRUE;
     close(fd);
 
@@ -155,6 +159,9 @@ int main(int argc, char *argv[])
     g_unix_signal_add(SIGTERM, G_SOURCE_FUNC(quit_app), &manager);
 
     g_main_loop_run(manager.loop);
+
+    at_destroy(&manager);
+    gpio_destroy(&manager);
 
     return 0;
 }

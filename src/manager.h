@@ -46,6 +46,7 @@ struct EG25Manager {
 
     struct gpiod_chip *gpiochip[2];
     struct gpiod_line *gpio_out[5];
+    struct gpiod_line *gpio_in[2];
 };
 
 void modem_configure(struct EG25Manager *data);
