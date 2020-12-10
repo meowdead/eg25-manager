@@ -1,0 +1,5 @@
+eg25-manager (0.0.1-1) unstable; urgency=medium
+
+  * Initial Debian packaging
+
+ -- Arnaud Ferraris <arnaud.ferraris@gmail.com>  Thu, 10 Dec 2020 15:19:15 +0100
