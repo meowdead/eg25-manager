@@ -206,7 +206,8 @@ int at_init(struct EG25Manager *manager)
 void at_destroy(struct EG25Manager *manager)
 {
     g_source_remove(manager->at_source);
-    close(manager->at_fd);
+    if (manager->at_fd > 0)
+        close(manager->at_fd);
 }
 
 void at_sequence_configure(struct EG25Manager *manager)

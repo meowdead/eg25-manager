@@ -114,11 +114,12 @@ static void name_owner_cb(GObject *object,
     g_assert(proxy == manager->suspend_proxy);
 
     owner = g_dbus_proxy_get_name_owner(proxy);
-    if (owner)
+    if (owner) {
         take_inhibitor(manager);
-    else
+        g_free(owner);
+    } else {
         drop_inhibitor(manager);
-    g_free(owner);
+    }
 }
 
 static void on_proxy_acquired(GObject *object,
@@ -139,9 +140,10 @@ static void on_proxy_acquired(GObject *object,
     g_signal_connect(manager->suspend_proxy, "g-signal", G_CALLBACK(signal_cb), manager);
 
     owner = g_dbus_proxy_get_name_owner(manager->suspend_proxy);
-    if (owner)
+    if (owner) {
         take_inhibitor(manager);
-    g_free(owner);
+        g_free(owner);
+    }
 }
 
 void suspend_init(struct EG25Manager *manager)
@@ -156,7 +158,10 @@ void suspend_init(struct EG25Manager *manager)
 void suspend_destroy(struct EG25Manager *manager)
 {
     drop_inhibitor(manager);
-    g_object_unref(manager->suspend_proxy);
+    if (manager->suspend_proxy) {
+        g_object_unref(manager->suspend_proxy);
+        manager->suspend_proxy = NULL;
+    }
 }
 
 void suspend_inhibit(struct EG25Manager *manager, gboolean inhibit)

@@ -189,10 +189,18 @@ void gpio_destroy(struct EG25Manager *manager)
 {
     int i;
 
-    for (i = 0; i < GPIO_OUT_COUNT; i++)
-        gpiod_line_release(manager->gpio_out[i]);
+    for (i = 0; i < GPIO_OUT_COUNT; i++) {
+        if (manager->gpio_out[i])
+            gpiod_line_release(manager->gpio_out[i]);
+    }
 
-    gpiod_chip_close(manager->gpiochip[0]);
+    for (i = 0; i < GPIO_IN_COUNT; i++) {
+        if (manager->gpio_in[i])
+            gpiod_line_release(manager->gpio_in[i]);
+    }
+
+    if (manager->gpiochip[0])
+        gpiod_chip_close(manager->gpiochip[0]);
     if (manager->gpiochip[1])
         gpiod_chip_close(manager->gpiochip[1]);
 }

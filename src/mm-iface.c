@@ -47,6 +47,9 @@ static void add_modem(struct EG25Manager *manager, GDBusObject *object)
         modem_configure(manager);
 
     path = mm_modem_get_device(manager->mm_modem);
+
+    if (manager->modem_usb_id)
+        g_free(manager->modem_usb_id);
     manager->modem_usb_id = g_strdup(strrchr(path, '/') + 1);
 
     gdbus_modem = MM_GDBUS_MODEM(manager->mm_modem);
@@ -189,5 +192,12 @@ void mm_iface_init(struct EG25Manager *manager)
 
 void mm_iface_destroy(struct EG25Manager *manager)
 {
-    g_clear_object(&manager->mm_manager);
+    if (manager->mm_manager) {
+        g_clear_object(&manager->mm_manager);
+        manager->mm_manager = NULL;
+    }
+    if (manager->mm_watch != 0) {
+        g_bus_unwatch_name(manager->mm_watch);
+        manager->mm_watch = 0;
+    }
 }
