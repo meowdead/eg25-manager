@@ -57,7 +57,7 @@ int gpio_sequence_poweron(struct EG25Manager *manager)
     sleep(1);
     gpiod_line_set_value(manager->gpio_out[GPIO_OUT_PWRKEY], 0);
 
-    g_message("Executed power-on sequence");
+    g_message("Executed power-on/off sequence");
 
     return 0;
 }
@@ -172,13 +172,16 @@ int gpio_init(struct EG25Manager *manager)
     return 0;
 }
 
-gboolean gpio_check_poweroff(struct EG25Manager *manager)
+gboolean gpio_check_poweroff(struct EG25Manager *manager, gboolean keep_down)
 {
     if (manager->gpio_in[GPIO_IN_STATUS] &&
         gpiod_line_get_value(manager->gpio_in[GPIO_IN_STATUS]) == 1) {
 
-        // Asserting RESET line to prevent modem from rebooting
-        gpiod_line_set_value(manager->gpio_out[GPIO_OUT_RESET], 1);
+        if (keep_down) {
+            // Asserting RESET line to prevent modem from rebooting
+            gpiod_line_set_value(manager->gpio_out[GPIO_OUT_RESET], 1);
+        }
+
         return TRUE;
     }
 

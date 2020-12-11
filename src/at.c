@@ -31,7 +31,7 @@ static int configure_serial(const char *tty)
     struct termios ttycfg;
     int fd;
 
-    fd = open(tty, O_RDWR | O_NOCTTY);
+    fd = open(tty, O_RDWR | O_NOCTTY | O_NONBLOCK);
     if (fd > 0) {
         tcgetattr(fd, &ttycfg);
         ttycfg.c_iflag &= ~(IGNBRK | BRKINT | ICRNL | INLCR | PARMRK | INPCK | ISTRIP | IXON);
@@ -143,7 +143,6 @@ static int append_at_command(struct EG25Manager *manager,
     if (!at_cmd)
         return -1;
 
-    at_cmd->retries = 0;
     at_cmd->cmd = g_strdup(cmd);
     if (subcmd)
         at_cmd->subcmd = g_strdup(subcmd);
@@ -157,22 +156,33 @@ static int append_at_command(struct EG25Manager *manager,
     return 0;
 }
 
+#define READ_BUFFER_SIZE 256
+
 static gboolean modem_response(gint fd,
                                GIOCondition event,
                                gpointer data)
 {
     struct EG25Manager *manager = data;
-    char response[256];
-    int ret;
+    char response[READ_BUFFER_SIZE*4+1];
+    char tmp[READ_BUFFER_SIZE];
+    ssize_t ret, pos = 0;
 
     /*
-     * TODO: several reads can be necessary to get the full response, we could
-     * loop until we read 0 chars with a reasonable delay between attempts
+     * Several reads can be necessary to get the full response, so we loop
+     * until we read 0 chars with a reasonable delay between attempts
      * (remember the transfer rate is 115200 here)
      */
-    ret = read(fd, response, sizeof(response));
-    if (ret > 0) {
-        response[ret] = 0;
+    do {
+        ret = read(fd, tmp, sizeof(tmp));
+        if (ret > 0) {
+            memcpy(&response[pos], tmp, ret);
+            pos += ret;
+            usleep(10000);
+        }
+    } while (ret > 0 && pos < (sizeof(response) - 1));
+
+    if (pos > 0) {
+        response[pos] = 0;
         g_strstrip(response);
         if (strlen(response) == 0)
             return TRUE;
@@ -181,7 +191,7 @@ static gboolean modem_response(gint fd,
 
         if (strcmp(response, "RDY") == 0)
             manager->modem_state = EG25_STATE_STARTED;
-        else if (strcmp(response, "ERROR") == 0)
+        else if (strstr(response, "ERROR"))
             retry_at_command(manager);
         else if (strstr(response, "OK"))
             process_at_result(manager, response);
@@ -249,7 +259,7 @@ void at_sequence_configure(struct EG25Manager *manager)
 
 void at_sequence_suspend(struct EG25Manager *manager)
 {
-    append_at_command(manager, "QGPS", NULL, NULL, "0");
+    append_at_command(manager, "QGPS", NULL, "0", NULL);
     append_at_command(manager, "QCFG", "urc/cache", "1", NULL);
     send_at_command(manager);
 }
@@ -257,7 +267,7 @@ void at_sequence_suspend(struct EG25Manager *manager)
 void at_sequence_resume(struct EG25Manager *manager)
 {
     append_at_command(manager, "QCFG", "urc/cache", "0", NULL);
-    append_at_command(manager, "QGPS", NULL, NULL, "1");
+    append_at_command(manager, "QGPS", NULL, "1", NULL);
     send_at_command(manager);
 }
 

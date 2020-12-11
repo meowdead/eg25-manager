@@ -16,6 +16,10 @@
 #include <unistd.h>
 
 #include <glib-unix.h>
+#include <libusb.h>
+
+#define EG25_USB_VID 0x2c7c
+#define EG25_USB_PID 0x0125
 
 static gboolean quit_app(struct EG25Manager *manager)
 {
@@ -32,7 +36,7 @@ static gboolean quit_app(struct EG25Manager *manager)
         gpio_sequence_shutdown(manager);
         manager->modem_state = EG25_STATE_FINISHING;
         for (i = 0; i < 30; i++) {
-            if (gpio_check_poweroff(manager))
+            if (gpio_check_poweroff(manager, TRUE))
                 break;
             sleep(1);
         }
@@ -46,9 +50,40 @@ static gboolean quit_app(struct EG25Manager *manager)
 
 static gboolean modem_start(struct EG25Manager *manager)
 {
-    g_message("Starting modem...");
-    gpio_sequence_poweron(manager);
-    manager->modem_state = EG25_STATE_POWERED;
+    ssize_t i, count;
+    gboolean should_boot = TRUE;
+    libusb_context *ctx = NULL;
+    libusb_device **devices = NULL;
+    struct libusb_device_descriptor desc;
+
+    if (manager->braveheart) {
+        // BH don't have the STATUS line connected, so check if USB device is present
+        libusb_init(&ctx);
+
+        count = libusb_get_device_list(ctx, &devices);
+        for (i = 0; i < count; i++) {
+            libusb_get_device_descriptor(devices[i], &desc);
+            if (desc.idVendor == EG25_USB_VID && desc.idProduct == EG25_USB_PID) {
+                g_message("Found corresponding USB device, modem already powered");
+                should_boot = FALSE;
+                break;
+            }
+        }
+
+        libusb_free_device_list(devices, 1);
+        libusb_exit(ctx);
+    } else if (!gpio_check_poweroff(manager, FALSE)) {
+        g_message("STATUS is low, modem already powered");
+        should_boot = FALSE;
+    }
+
+    if (should_boot) {
+        g_message("Starting modem...");
+        gpio_sequence_poweron(manager);
+        manager->modem_state = EG25_STATE_POWERED;
+    } else {
+        manager->modem_state = EG25_STATE_STARTED;
+    }
 
     return FALSE;
 }
@@ -100,14 +135,20 @@ error:
     manager->modem_state = EG25_STATE_RESETTING;
 }
 
-void modem_suspend(struct EG25Manager *manager)
+void modem_suspend_pre(struct EG25Manager *manager)
 {
+    manager->modem_state = EG25_STATE_SUSPENDING;
     gpio_sequence_suspend(manager);
+}
+
+void modem_suspend_post(struct EG25Manager *manager)
+{
     at_sequence_suspend(manager);
 }
 
 void modem_resume_pre(struct EG25Manager *manager)
 {
+    manager->modem_state = EG25_STATE_RESUMING;
     gpio_sequence_resume(manager);
 }
 
