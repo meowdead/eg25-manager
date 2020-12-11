@@ -132,9 +132,6 @@ static void object_removed_cb(struct EG25Manager *manager, GDBusObject *object)
     path = g_dbus_object_get_object_path(object);
     g_message("ModemManager object `%s' removed", path);
 
-    if (manager->modem_state == EG25_STATE_SUSPENDING)
-        modem_suspend_post(manager);
-
     manager->mm_modem = NULL;
     if (manager->modem_usb_id) {
         g_free(manager->modem_usb_id);

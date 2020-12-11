@@ -135,20 +135,14 @@ error:
     manager->modem_state = EG25_STATE_RESETTING;
 }
 
-void modem_suspend_pre(struct EG25Manager *manager)
+void modem_suspend(struct EG25Manager *manager)
 {
-    manager->modem_state = EG25_STATE_SUSPENDING;
     gpio_sequence_suspend(manager);
-}
-
-void modem_suspend_post(struct EG25Manager *manager)
-{
     at_sequence_suspend(manager);
 }
 
 void modem_resume_pre(struct EG25Manager *manager)
 {
-    manager->modem_state = EG25_STATE_RESUMING;
     gpio_sequence_resume(manager);
 }
 

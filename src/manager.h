@@ -51,8 +51,7 @@ struct EG25Manager {
 
 void modem_configure(struct EG25Manager *data);
 void modem_reset(struct EG25Manager *data);
-void modem_suspend_pre(struct EG25Manager *data);
-void modem_suspend_post(struct EG25Manager *data);
+void modem_suspend(struct EG25Manager *data);
 void modem_resume_pre(struct EG25Manager *data);
 void modem_resume_post(struct EG25Manager *data);
 void modem_update_state(struct EG25Manager *data, MMModemState state);

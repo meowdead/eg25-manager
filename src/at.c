@@ -55,7 +55,9 @@ static gboolean send_at_command(struct EG25Manager *manager)
     struct AtCommand *at_cmd = g_list_nth_data(manager->at_cmds, 0);
 
     if (at_cmd) {
-        if (at_cmd->subcmd == NULL && at_cmd->value == NULL)
+        if (at_cmd->subcmd == NULL && at_cmd->value == NULL && at_cmd->expected == NULL)
+            sprintf(command, "AT+%s\r\n", at_cmd->cmd);
+        else if (at_cmd->subcmd == NULL && at_cmd->value == NULL)
             sprintf(command, "AT+%s?\r\n", at_cmd->cmd);
         else if (at_cmd->subcmd == NULL && at_cmd->value)
             sprintf(command, "AT+%s=%s\r\n", at_cmd->cmd, at_cmd->value);
@@ -195,6 +197,9 @@ static gboolean modem_response(gint fd,
             retry_at_command(manager);
         else if (strstr(response, "OK"))
             process_at_result(manager, response);
+        else
+            // Not a recognized response, try running next command, just in case
+            next_at_command(manager);
     }
 
     return TRUE;
@@ -259,7 +264,7 @@ void at_sequence_configure(struct EG25Manager *manager)
 
 void at_sequence_suspend(struct EG25Manager *manager)
 {
-    append_at_command(manager, "QGPS", NULL, "0", NULL);
+    append_at_command(manager, "QGPSEND", NULL, NULL, NULL);
     append_at_command(manager, "QCFG", "urc/cache", "1", NULL);
     send_at_command(manager);
 }
