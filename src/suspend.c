@@ -66,7 +66,8 @@ static void take_inhibitor(struct EG25Manager *manager)
 {
     GVariant *variant_arg;
 
-    g_assert(manager->suspend_inhibit_fd == -1);
+    if(manager->suspend_inhibit_fd != -1)
+        drop_inhibitor(manager);
 
     variant_arg = g_variant_new ("(ssss)", "sleep", "eg25manager",
                                  "eg25manager needs to prepare modem for sleep", "delay");

@@ -84,13 +84,8 @@ static void interface_removed_cb(struct EG25Manager *manager,
 
     g_message("ModemManager interface `%s' removed on object `%s'", info->name, path);
 
-    if (g_strcmp0(info->name, MM_DBUS_INTERFACE_MODEM) == 0) {
+    if (g_strcmp0(info->name, MM_DBUS_INTERFACE_MODEM) == 0)
         manager->mm_modem = NULL;
-        if (manager->modem_usb_id) {
-            g_free(manager->modem_usb_id);
-            manager->modem_usb_id = NULL;
-        }
-    }
 }
 
 
@@ -133,10 +128,6 @@ static void object_removed_cb(struct EG25Manager *manager, GDBusObject *object)
     g_message("ModemManager object `%s' removed", path);
 
     manager->mm_modem = NULL;
-    if (manager->modem_usb_id) {
-        g_free(manager->modem_usb_id);
-        manager->modem_usb_id = NULL;
-    }
 }
 
 
@@ -195,6 +186,10 @@ void mm_iface_destroy(struct EG25Manager *manager)
     if (manager->mm_manager) {
         g_clear_object(&manager->mm_manager);
         manager->mm_manager = NULL;
+    }
+    if (manager->modem_usb_id) {
+        g_free(manager->modem_usb_id);
+        manager->modem_usb_id = NULL;
     }
     if (manager->mm_watch != 0) {
         g_bus_unwatch_name(manager->mm_watch);

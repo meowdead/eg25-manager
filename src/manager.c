@@ -126,7 +126,6 @@ void modem_reset(struct EG25Manager *manager)
     write(fd, manager->modem_usb_id, strlen(manager->modem_usb_id));
     close(fd);
 
-    manager->modem_state = EG25_STATE_CONFIGURED;
     return;
 
 error:
