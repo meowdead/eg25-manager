@@ -8,6 +8,7 @@ Build-Depends: debhelper-compat (= 13),
                libglib2.0-dev,
                libgpiod-dev,
                libmm-glib-dev,
+               libusb-1.0-0-dev,
                meson,
 Homepage: https://gitlab.com/mobian1/devices/eg25-manager
 Vcs-Git: https://gitlab.com/mobian1/devices/eg25-manager.git
