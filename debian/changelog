@@ -1,3 +1,10 @@
+eg25-manager (0.0.6-1) unstable; urgency=medium
+
+  * New upstream release 0.0.6
+  * d/patches: drop upstreamed patches
+
+ -- Arnaud Ferraris <arnaud.ferraris@gmail.com>  Fri, 11 Dec 2020 15:11:26 +0100
+
 eg25-manager (0.0.5-2) unstable; urgency=medium
 
   * d/patches: fix crash on modem recovery
