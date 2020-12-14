@@ -131,13 +131,13 @@ int gpio_init(struct EG25Manager *manager)
 
         manager->gpio_out[i] = gpiod_chip_get_line(manager->gpiochip[chipidx], offset);
         if (!manager->gpio_out[i]) {
-            g_critical("Unable to get output GPIO %d", i);
+            g_error("Unable to get output GPIO %d", i);
             return 1;
         }
 
         ret = gpiod_line_request_output(manager->gpio_out[i], "eg25manager", 0);
         if (ret < 0) {
-            g_critical("Unable to request output GPIO %d", i);
+            g_error("Unable to request output GPIO %d", i);
             return 1;
         }
     }
@@ -177,7 +177,7 @@ gboolean gpio_check_poweroff(struct EG25Manager *manager, gboolean keep_down)
     if (manager->gpio_in[GPIO_IN_STATUS] &&
         gpiod_line_get_value(manager->gpio_in[GPIO_IN_STATUS]) == 1) {
 
-        if (keep_down) {
+        if (keep_down && manager->gpio_out[GPIO_OUT_RESET]) {
             // Asserting RESET line to prevent modem from rebooting
             gpiod_line_set_value(manager->gpio_out[GPIO_OUT_RESET], 1);
         }

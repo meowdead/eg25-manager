@@ -135,7 +135,7 @@ static void mm_manager_new_cb(GDBusConnection    *connection,
                               GAsyncResult       *res,
                               struct EG25Manager *manager)
 {
-    GError *error = NULL;
+    g_autoptr (GError) error = NULL;
 
     manager->mm_manager = mm_manager_new_finish(res, &error);
     if (!manager->mm_manager)

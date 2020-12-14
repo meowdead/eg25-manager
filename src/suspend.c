@@ -42,14 +42,13 @@ static void inhibit_done(GObject *source,
 {
     GDBusProxy *suspend_proxy = G_DBUS_PROXY(source);
     struct EG25Manager *manager = user_data;
-    GError *error = NULL;
+    g_autoptr (GError) error = NULL;
     GVariant *res;
     GUnixFDList *fd_list;
 
     res = g_dbus_proxy_call_with_unix_fd_list_finish(suspend_proxy, &fd_list, result, &error);
     if (!res) {
         g_warning("inhibit failed: %s", error->message);
-        g_error_free(error);
     } else {
         if (!fd_list || g_unix_fd_list_get_length(fd_list) != 1)
             g_warning("didn't get a single fd back");
@@ -127,13 +126,12 @@ static void on_proxy_acquired(GObject *object,
                               GAsyncResult *res,
                               struct EG25Manager *manager)
 {
-    GError *error = NULL;
+    g_autoptr (GError) error = NULL;
     char *owner;
 
     manager->suspend_proxy = g_dbus_proxy_new_for_bus_finish(res, &error);
     if (!manager->suspend_proxy) {
         g_warning("failed to acquire logind proxy: %s", error->message);
-        g_clear_error(&error);
         return;
     }
 

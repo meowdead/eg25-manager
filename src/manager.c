@@ -112,18 +112,23 @@ void modem_configure(struct EG25Manager *manager)
 
 void modem_reset(struct EG25Manager *manager)
 {
-    int fd;
+    int fd, ret, len = strlen(manager->modem_usb_id);
 
     fd = open("/sys/bus/usb/drivers/usb/unbind", O_WRONLY);
     if (fd < 0)
         goto error;
-    write(fd, manager->modem_usb_id, strlen(manager->modem_usb_id));
+    ret = write(fd, manager->modem_usb_id, len);
+    if (ret < len)
+        g_warning("Couldn't unbind modem: wrote %d/%d bytes", ret, len);
     close(fd);
 
     fd = open("/sys/bus/usb/drivers/usb/bind", O_WRONLY);
     if (fd < 0)
         goto error;
-    write(fd, manager->modem_usb_id, strlen(manager->modem_usb_id));
+    ret = write(fd, manager->modem_usb_id, len);
+    if (ret < len)
+        g_warning("Couldn't unbind modem: wrote %d/%d bytes", ret, len);
+
     close(fd);
 
     return;
@@ -154,7 +159,7 @@ int main(int argc, char *argv[])
 {
     struct EG25Manager manager;
     char compatible[32];
-    int fd;
+    int fd, ret;
 
     memset(&manager, 0, sizeof(manager));
     manager.at_fd = -1;
@@ -167,8 +172,8 @@ int main(int argc, char *argv[])
         g_critical("Unable to read 'compatible' string from device tree");
         return 1;
     }
-    read(fd, compatible, sizeof(compatible));
-    if (!strstr(compatible, "pine64,pinephone-1.2"))
+    ret = read(fd, compatible, sizeof(compatible));
+    if (ret > 0 && !strstr(compatible, "pine64,pinephone-1.2"))
         manager.braveheart = TRUE;
     close(fd);
 
