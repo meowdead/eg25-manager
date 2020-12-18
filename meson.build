@@ -8,7 +8,7 @@
 project (
   'eg25manager',
   'c',
-  version : '0.0.6',
+  version : '0.1.1',
   license : 'GPLv3+',
   meson_version : '>= 0.50.0',
   default_options :
@@ -43,6 +43,7 @@ endif
 mgr_deps = [
     dependency('glib-2.0'),
     dependency('gio-unix-2.0'),
+    dependency('gudev-1.0'),
     dependency('libgpiod'),
     dependency('libusb-1.0'),
     dependency('mm-glib'),

@@ -9,6 +9,7 @@
 #include "manager.h"
 #include "mm-iface.h"
 #include "suspend.h"
+#include "udev.h"
 
 #include <fcntl.h>
 #include <signal.h>
@@ -30,6 +31,7 @@ static gboolean quit_app(struct EG25Manager *manager)
     at_destroy(manager);
     mm_iface_destroy(manager);
     suspend_destroy(manager);
+    udev_destroy(manager);
 
     if (manager->modem_state >= EG25_STATE_STARTED) {
         g_message("Powering down the modem...");
@@ -110,9 +112,26 @@ void modem_configure(struct EG25Manager *manager)
     at_sequence_configure(manager);
 }
 
+static gboolean modem_reset_done(struct EG25Manager* manager)
+{
+    manager->modem_state = EG25_STATE_RESUMING;
+    manager->reset_timer = 0;
+    return FALSE;
+}
+
 void modem_reset(struct EG25Manager *manager)
 {
     int fd, ret, len = strlen(manager->modem_usb_id);
+
+    if (manager->reset_timer)
+        return;
+
+    if (manager->suspend_timer) {
+        g_source_remove(manager->suspend_timer);
+        manager->suspend_timer = 0;
+    }
+
+    manager->modem_state = EG25_STATE_RESETTING;
 
     fd = open("/sys/bus/usb/drivers/usb/unbind", O_WRONLY);
     if (fd < 0)
@@ -127,16 +146,20 @@ void modem_reset(struct EG25Manager *manager)
         goto error;
     ret = write(fd, manager->modem_usb_id, len);
     if (ret < len)
-        g_warning("Couldn't unbind modem: wrote %d/%d bytes", ret, len);
-
+        g_warning("Couldn't bind modem: wrote %d/%d bytes", ret, len);
     close(fd);
+
+    /*
+     * 3s is long enough to make sure the modem has been bound back and
+     * short enough to ensure it hasn't been acquired by ModemManager
+     */
+    manager->reset_timer = g_timeout_add_seconds(3, G_SOURCE_FUNC(modem_reset_done), manager);
 
     return;
 
 error:
     // Everything else failed, reset the modem
     at_sequence_reset(manager);
-    manager->modem_state = EG25_STATE_RESETTING;
 }
 
 void modem_suspend(struct EG25Manager *manager)
@@ -181,6 +204,7 @@ int main(int argc, char *argv[])
     gpio_init(&manager);
     mm_iface_init(&manager);
     suspend_init(&manager);
+    udev_init(&manager);
 
     g_idle_add(G_SOURCE_FUNC(modem_start), &manager);
 

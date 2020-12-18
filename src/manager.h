@@ -8,6 +8,7 @@
 
 #include <glib.h>
 #include <gpiod.h>
+#include <gudev/gudev.h>
 #include <libmm-glib.h>
 
 enum EG25State {
@@ -26,6 +27,11 @@ enum EG25State {
 
 struct EG25Manager {
     GMainLoop *loop;
+    guint reset_timer;
+
+    int at_fd;
+    guint at_source;
+    GList *at_cmds;
 
     enum EG25State modem_state;
     gchar *modem_usb_id;
@@ -37,12 +43,9 @@ struct EG25Manager {
 
     GDBusProxy *suspend_proxy;
     int suspend_inhibit_fd;
-    guint suspend_source;
+    guint suspend_timer;
 
-
-    int at_fd;
-    guint at_source;
-    GList *at_cmds;
+    GUdevClient *udev;
 
     struct gpiod_chip *gpiochip[2];
     struct gpiod_line *gpio_out[5];
