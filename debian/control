@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Arnaud Ferraris <arnaud.ferraris@gmail.com>
 Standards-Version: 4.5.1
 Rules-Requires-Root: no
-Build-Depends: debhelper-compat (= 13),
+Build-Depends: debhelper (>= 12),
                libglib2.0-dev,
                libgpiod-dev,
                libgudev-1.0-dev,
