@@ -1,0 +1,8 @@
+#!/sbin/openrc-run
+supervisor="supervise-daemon"
+description="Starting EG25 manager"
+command="/usr/bin/eg25manager"
+
+depend() {
+	after modemmanager
+}
