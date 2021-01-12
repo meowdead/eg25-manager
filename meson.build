@@ -10,7 +10,7 @@ project (
   'c',
   version : '0.1.1',
   license : 'GPLv3+',
-  meson_version : '>= 0.50.0',
+  meson_version : '>= 0.49.2',
   default_options :
     [
       'warning_level=1',
